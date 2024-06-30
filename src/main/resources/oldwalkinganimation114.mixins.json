@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "tecna.oldwalkinganimation.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+  ],
+  "client": [
+    "AnimalModelMixin",
+    "BipedEntityModelMixin114"
+  ],
+  "plugin": "tecna.oldwalkinganimation.mixin.MyMixinConfigPlugin114",
+  "injectors": {
+    "defaultRequire": 1
+	}
+}
