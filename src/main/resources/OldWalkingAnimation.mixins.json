@@ -1,0 +1,26 @@
+{
+  "required": true,
+  "package": "tecna.oldwalkinganimation.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "BipedEntityModelMixin",
+    "ChickenEntityModelMixin",
+    "CreeperEntityModelMixin",
+    "EntityRendererMixin",
+    "HeldItemRendererMixin",
+    "HorseEntityModelMixin",
+    "LivingEntityRendererMixin",
+    "OcelotEntityModelMixin",
+    "OverlayTextureAccessor",
+    "OverlayTextureMixin",
+    "PlayerEntityRendererMixin",
+    "QuadrupedEntityModelMixin",
+    "VillagerResemblingModelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": [
+    "LivingEntityMixin"
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "owa.config.title":"Old Walking Animation",
+  "owa.config.category.main":"Main Settings",
+
+
+
+
+
+
+  "oldwalkinganimation.midnightconfig.category.main":"Main Settings",
+
+  "oldwalkinganimation.midnightconfig.mainInfo":"Old Walking Animation Main Settings",
+
+
+  "oldwalkinganimation.midnightconfig.enableMod":"Enable Mod",
+  "oldwalkinganimation.midnightconfig.enableMod.tooltip":"Turns the mod on or off",
+
+  "oldwalkinganimation.midnightconfig.enableMobs": "Enable Mobs",
+  "oldwalkinganimation.midnightconfig.enableMobs.tooltip":"Enables or disables most of the features for mobs\n§7§oDamage and Death settings are unaffected",
+
+
+  "oldwalkinganimation.midnightconfig.bodyRot":"Enable Body Rotation",
+  "oldwalkinganimation.midnightconfig.bodyRot.tooltip":"Makes the body rotate similarly to how it dose in the survival test versions of the game",
+
+
+  "oldwalkinganimation.midnightconfig.bounceInfo":"Bouncing Settings",
+  "oldwalkinganimation.midnightconfig.bounce":"Enable Bouncing animation",
+  "oldwalkinganimation.midnightconfig.bounce.tooltip":"Makes mobs/players bounce up and down when walking/running",
+  "oldwalkinganimation.midnightconfig.bounceHeight":"Bounce Height",
+  "oldwalkinganimation.midnightconfig.bounceHeight.tooltip":"Changes the bouncing height",
+
+
+
+  "oldwalkinganimation.midnightconfig.animationInfo":"Animation Settings",
+
+
+  "oldwalkinganimation.midnightconfig.speed":"Animation Speed",
+  "oldwalkinganimation.midnightconfig.speed.tooltip":"Changes how fast the bouncing and arm & leg animation plays\n§7§oIf Use Vanilla speed is enabled then this setting will do nothing",
+  "oldwalkinganimation.midnightconfig.vanillaSpeed":"Use Vanilla Speed",
+  "oldwalkinganimation.midnightconfig.vanillaSpeed.tooltip":"This makes the arm & leg swing/bounce use the vanilla speed\n§7§oThis setting will disable the speed and max speed sliders",
+  "oldwalkinganimation.midnightconfig.speedLimbAngle":"Speed effects arm & leg swing/bounce amount",
+
+
+
+  "oldwalkinganimation.midnightconfig.category.damage":"Death & Damage",
+
+  "oldwalkinganimation.midnightconfig.damageInfo":"Death And Damage Animation Settings",
+
+
+  "oldwalkinganimation.midnightconfig.damage":"Enable Old Death & Damage Animation",
+  "oldwalkinganimation.midnightconfig.velocity":"Use Velocity",
+  "oldwalkinganimation.midnightconfig.fallback":"Enable Fallback",
+  "oldwalkinganimation.midnightconfig.lockRot":"Lock Damage Rotation",
+
+  "oldwalkinganimation.midnightconfig.damageFlashInfo":"Damage Flash Settings",
+
+  "oldwalkinganimation.midnightconfig.damageFlash":"Enable Custom Damage Flash",
+  "oldwalkinganimation.midnightconfig.damageGlow":"Damage Glow",
+
+  "oldwalkinganimation.midnightconfig.category.arm":"1st Person Arm",
+
+  "oldwalkinganimation.midnightconfig.firstPersonArmInfo":"First Person Arm Settings",
+
+
+  "oldwalkinganimation.midnightconfig.enableArm":"Enable Custom First Person Arm",
+
+  "oldwalkinganimation.midnightconfig.armLocationInfo":"Edit Arm Position",
+  "oldwalkinganimation.midnightconfig.armRotationInfo":"Edit Arm Rotation",
+
+
+  "oldwalkinganimation.midnightconfig.category.limbs":"Limb Settings",
+
+  "oldwalkinganimation.midnightconfig.armInfo":"Arm Settings",
+  "oldwalkinganimation.midnightconfig.arms":"Enable Arm Flailing Animation",
+  "oldwalkinganimation.midnightconfig.ridingMobAnimation":"Arm And Leg Animation Play Wile Riding",
+  "oldwalkinganimation.midnightconfig.tpose":"T-Pose",
+
+
+  "oldwalkinganimation.midnightconfig.headInfo":"Head Settings",
+
+  "oldwalkinganimation.midnightconfig.headBob":"Enable HeadBanging Animation"
+}

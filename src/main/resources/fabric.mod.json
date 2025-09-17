@@ -1,11 +1,11 @@
 {
 	"schemaVersion": 1,
 	"id": "oldwalkinganimation",
-	"version": "${version}",
+	"version": "$mod_version",
 	"name": "Old Walking Animation",
 	"description": "Brings back the old Indev walking animation",
 	"authors": [
-		"5space and TecnaGamer"
+		"TecnaGamer"
 	],
 	"contact": {
 		"homepage": "https://gitlab.com/TecnaGamer/OldWalkingAnimation",
@@ -20,12 +20,10 @@
 		]
 	},
 	"mixins": [
-		"oldwalkinganimation.mixins.json",
-		"oldwalkinganimation114.mixins.json"
-
+		"OldWalkingAnimation.mixins.json"
 	],
+	"accessWidener": "OldWalkingAnimation.accesswidener",
 	"depends": {
-
 	},
 	"suggests": {
 	}

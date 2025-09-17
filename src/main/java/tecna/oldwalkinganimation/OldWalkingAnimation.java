@@ -1,30 +1,61 @@
 package tecna.oldwalkinganimation;
 
+
+
+//? if fabric
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.MinecraftVersion;
-import net.minecraft.client.MinecraftClient;
+import eu.midnightdust.lib.config.MidnightConfig;
+import tecna.oldwalkinganimation.config.Config;
+//? if forge {
+/*import net.minecraftforge.client.ConfigScreenHandler;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.common.Mod;
+@Mod("oldwalkinganimation")
 
-import java.io.ObjectInputStream;
+*///?} if neoforge {
+/*import net.neoforged.fml.common.Mod;
 
-
-public class OldWalkingAnimation implements ModInitializer {
-	public static final String MODID = "oldwalkinganimation";
-	@Override
-	public void onInitialize() {
-		System.out.println("Old Walking Animation Starting!");
-
-		//String getId = MinecraftVersion.create().getId();
-//		System.out.println(getId);
-//		String getName = MinecraftVersion.create().getName();
-//		System.out.println(getName);
-//		String getReleaseTarget = MinecraftVersion.create().getReleaseTarget();
-//		System.out.println(getReleaseTarget);
-//		Integer getProtocolVersion = MinecraftVersion.create().getProtocolVersion();
-//		System.out.println(getProtocolVersion);
+@Mod("oldwalkinganimation")
+*///?}
 
 
+public class OldWalkingAnimation
+		//? if fabric
+		implements ModInitializer
+{
 
+
+
+	public static final String MOD_ID = "oldwalkinganimation";
+
+
+	//? if forge || neoforge {
+
+
+
+
+
+    /*public OldWalkingAnimation() {
+
+
+		onInitialize();
+		//? if <=1.19.4 {
+		ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, () ->
+				new ConfigScreenHandler.ConfigScreenFactory((client, parent) -> MidnightConfig.getScreen(parent, "oldwalkinganimation")));
+		//?}
 	}
+    *///?}
+
+
+
+
+	public void onInitialize() {
+		Config.init("oldwalkinganimation", Config.class);
+
+
+		System.out.println("Old Walking Animation Starting!");
+	}
+
 
 
 }

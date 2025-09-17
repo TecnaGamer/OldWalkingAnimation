@@ -1,0 +1,18 @@
+plugins {
+    id "dev.kikugie.stonecutter"
+    id "dev.architectury.loom" version "$architectury_loom_version" apply false
+}
+
+plugins.apply "dev.kikugie.stonecutter"
+stonecutter.active "1.21-fabric" /* [SC] DO NOT EDIT */
+
+stonecutter.registerChiseled tasks.register("chiseledBuild", stonecutter.chiseled) {
+    group = "project"
+    ofTask("build")
+}
+
+stonecutter.registerChiseled tasks.register("chiseledRun", stonecutter.chiseled) {
+    group = "project"
+    ofTask("runClient")
+}
+

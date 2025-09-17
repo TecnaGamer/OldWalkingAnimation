@@ -1,0 +1,5 @@
+#!/bin/sh
+
+chmod +x gradlew
+./gradlew setupChiseledBuild || 0
+./gradlew chiseledBuild

@@ -1,9 +1,7 @@
-# Fabric Example Mod
+# Old Walking Animation
 
-## Setup
+Brings back the old walking animation from Indev
 
-For setup instructions please see the [fabric wiki page](https://fabricmc.net/wiki/tutorial:setup) that relates to the IDE that you are using.
+Requires [Fabric Api](https://modrinth.com/mod/fabric-api)
 
-## License
-
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+Credits: Mod originaly created by 5space, he has given permoshion to me to update and publish this mod.
