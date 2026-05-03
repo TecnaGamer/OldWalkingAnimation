@@ -32,3 +32,13 @@ bin/
 
 run/
 /src(ref)/
+versions/*/runs/
+
+# claude
+
+.claude/
+
+# not part of the mod build
+
+bundle-test/
+research/

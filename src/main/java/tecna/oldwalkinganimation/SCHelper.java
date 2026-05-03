@@ -1,20 +1,30 @@
 package tecna.oldwalkinganimation;
 
-import net.minecraft.text.Text;
+//? if >=26.1 || neoforge {
+import net.minecraft.network.chat.Component;
+//?} else {
+/*import net.minecraft.text.Text;
+*///?}
 
 public class SCHelper {
 
     @FunctionalInterface
     public interface TextCreator {
-        Text create(String content);
+        //? if >=26.1 || neoforge {
+        Component create(String content);
+        //?} else {
+        /*Text create(String content);
+        *///?}
     }
 
     public static final TextCreator text;
 
     static {
-        //? if >=1.17 {
-            text = Text::literal;
-        //?} else {
+        //? if >=26.1 || neoforge {
+        text = Component::literal;
+        //?} else if >=1.17 {
+        /*text = Text::literal;
+        *///?} else {
             /*text = LiteralText::new;
         *///?}
     }

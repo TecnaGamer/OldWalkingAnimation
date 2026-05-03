@@ -17,6 +17,9 @@
 	"entrypoints": {
 		"main": [
 			"tecna.oldwalkinganimation.OldWalkingAnimation"
+		],
+		"modmenu": [
+			"tecna.oldwalkinganimation.config.OwaModMenuCompat"
 		]
 	},
 	"mixins": [

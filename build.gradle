@@ -14,9 +14,13 @@ plugins {
 }
 
 group = project.properties.mod_package
-version = rootProject.properties.mod_version
+// Always suffix the per-version inner jar's mod version with the MC version. Without this,
+// every inner jar in the multi-version bundle ends up with id=oldwalkinganimation version=2.0.0,
+// which fabric-loader 0.16.x dedupes - leaving one arbitrarily-picked candidate's depends to
+// drive the entire mod resolution (e.g. picks the 1.20.6 jar's `=1.20.6` dep on a 1.20.5 game).
+version = "${rootProject.properties.mod_version}+${project.properties.minecraft}"
 ModLoader loader = ModLoader.fromProject(project)
-archivesBaseName = "${rootProject.properties.mod_id}-$project.properties.minecraft-$loader.friendlyName"
+base.archivesName = "${rootProject.properties.mod_id}-$project.properties.minecraft-$loader.friendlyName"
 
 def packageJar = tasks.create("packageJar", Copy.class) {
     into("${rootProject.layout.buildDirectory.get()}/libs/${E.p["mod_version"]}")
@@ -32,6 +36,15 @@ def packageJar = tasks.create("packageJar", Copy.class) {
 //}
 
 project.ext["loom.platform"] = loader.friendlyName
+
+tasks.named("compileJava").configure { dependsOn("setupChiseledBuild") }
+tasks.named("processResources").configure { dependsOn("setupChiseledBuild") }
+afterEvaluate {
+    def chiseledSrc = layout.buildDirectory.dir("chiseledSrc/main/java").get().asFile
+    def chiseledRes = layout.buildDirectory.dir("chiseledSrc/main/resources").get().asFile
+    sourceSets.main.java.setSrcDirs([chiseledSrc])
+    sourceSets.main.resources.setSrcDirs([chiseledRes])
+}
 
 repositories {
     mavenCentral()
@@ -75,64 +88,115 @@ repositories {
     maven { url = "https://jitpack.io" }
 
 }
-apply plugin: 'dev.architectury.loom'
+boolean useNeogradle = loader == NEOFORGE && stonecutter.eval(minecraft, ">=1.21")
+project.ext["useNeogradle"] = useNeogradle
+if (useNeogradle) {
+    apply plugin: 'net.neoforged.gradle.userdev'
+} else if (stonecutter.eval(minecraft, ">=26.1")) {
+    apply plugin: 'net.fabricmc.fabric-loom'
+} else {
+    apply plugin: 'dev.architectury.loom'
+}
 stonecutter.const("fabric", loader == FABRIC)
 stonecutter.const("forge", loader == FORGE)
 stonecutter.const("neoforge", loader == NEOFORGE)
-loom {
-
-    runConfigs.all {
-        ideConfigGenerated true // Run configurations are not created for subprojects by default
-        runDir "../../run" // Use a shared run folder and just create separate worlds
+if (stonecutter.eval(minecraft, ">=26.1")) {
+    System.out.println("Java 25")
+    java {
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(25)
+        }
     }
+} else if (stonecutter.eval(minecraft, ">=1.20.5")) {
+    System.out.println("Java 21")
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+} else if (stonecutter.eval(minecraft, ">=1.17")) {
+    System.out.println("Java 17")
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+} else {
+    System.out.println("Java 8")
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(8)
+        }
+    }
+}
 
-    // Env configuration
-stonecutter {
+if (!useNeogradle) {
+    loom {
 
-        if (eval(minecraft, ">=1.20.6")) {
-            System.out.println("Java 21")
-            sourceCompatibility = JavaVersion.VERSION_21
-            targetCompatibility = JavaVersion.VERSION_21
-        } else if (eval(minecraft, ">=1.17")) {
-            System.out.println("Java 17")
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-        } else {
-            System.out.println("Java 8")
-            sourceCompatibility = JavaVersion.VERSION_1_8
-            targetCompatibility = JavaVersion.VERSION_1_8
+        runConfigs.all {
+            ideConfigGenerated true // Run configurations are not created for subprojects by default
+            runDir "../../run" // Use a shared run folder and just create separate worlds
         }
 
-}
 
-
-    File file = project.buildDir.toPath().resolve("chiseledSrc/main/resources/${E.p.mod_id}.accesswidener").toFile()
-    if (file.exists()) {
-        accessWidenerPath = file
-    } else {
-        project.logger.warn("Access widener file not generated yet!")
+        // 1.20.x-neoforge uses architectury-loom + mojmap, where the empty `named`-namespace
+        // access widener trips over the remapper ("Namespace (named) does not match current
+        // runtime namespace (unused)"). Skip the AW entirely for that combination.
+        boolean skipAw = loader == NEOFORGE && stonecutter.eval(minecraft, ">=1.20.2") && !useNeogradle
+        if (!skipAw && !stonecutter.eval(minecraft, ">=26.1")) {
+            File file = project.buildDir.toPath().resolve("chiseledSrc/main/resources/${E.p.mod_id}.accesswidener").toFile()
+            if (file.exists()) {
+                accessWidenerPath = file
+            } else {
+                project.logger.warn("Access widener file not generated yet!")
+            }
+        }
     }
-}
-// Use vanilla mixin on Forge
-if (loader == FORGE) {
-    loom {
-        forge {
-            useCustomMixin = false
+    if (loader == NEOFORGE && stonecutter.eval(minecraft, ">=1.20.2") && !useNeogradle) {
+        // Drop the header-only AW from the chiseled output before processResources copies it.
+        tasks.named("processResources") {
+            dependsOn "setupChiseledBuild"
+            doFirst {
+                File chiseledAw = project.buildDir.toPath().resolve("chiseledSrc/main/resources/${E.p.mod_id}.accesswidener").toFile()
+                if (chiseledAw.exists()) chiseledAw.delete()
+            }
+        }
+    }
+    // Use vanilla mixin on Forge
+    if (loader == FORGE) {
+        loom {
+            forge {
+                useCustomMixin = false
 
-            mixinConfig "${E.p.mod_id}.mixins.json"
+                mixinConfig "${E.p.mod_id}.mixins.json"
+            }
         }
     }
 }
 
 dependencies {
 
-    minecraft "net.minecraft:minecraft:$project.properties.minecraft"
-    mappings(loom.layered {
-        mappings "net.fabricmc:yarn:${project.properties.yarn_mappings}:v2"
-        if (stonecutter.eval(minecraft, ">=1.20.6") && loader == NEOFORGE) {
-            mappings("dev.architectury:yarn-mappings-patch-neoforge:${minecraft}+build.4")
+    if (!useNeogradle) {
+        minecraft "net.minecraft:minecraft:$project.properties.minecraft"
+    }
+    if (!useNeogradle && !stonecutter.eval(minecraft, ">=26.1")) {
+        // 1.20.x-neoforge: yarn 1.20.x has unfixable srg->yarn name conflicts under tiny-remapper
+        // (e.g. chl/[getInventory, gZ] both -> getInventory), so this path uses official Mojang
+        // mappings instead. The neoforge source branches in the codebase already use mojmap names.
+        if (loader == NEOFORGE && stonecutter.eval(minecraft, ">=1.20.2")) {
+            mappings loom.officialMojangMappings()
+        } else {
+            mappings "net.fabricmc:yarn:$project.properties.yarn_mappings:v2"
         }
-    })
+    }
 
 //
 //    if (project.properties.parchment_version) {
@@ -144,33 +208,43 @@ dependencies {
 //        mappings loom.officialMojangMappings()
 //    }
     if (loader == FABRIC) {
-        modImplementation "net.fabricmc:fabric-loader:$project.properties.fabricloader"
-        modCompileOnly "com.terraformersmc:modmenu:$project.properties.modmenu", {
-            // Don't transitively pull in Mod Menu's Fabric deps
-            exclude module: "net.fabricmc"
-            exclude module: "net.fabricmc.fabric-api"
+        def modImpl = stonecutter.eval(minecraft, ">=26.1") ? "implementation" : "modImplementation"
+        def modCompile = stonecutter.eval(minecraft, ">=26.1") ? "compileOnly" : "modCompileOnly"
+        def modRuntime = stonecutter.eval(minecraft, ">=26.1") ? "runtimeOnly" : "modLocalRuntime"
+        def modApiCfg = stonecutter.eval(minecraft, ">=26.1") ? "api" : "modApi"
+
+        add(modImpl, "net.fabricmc:fabric-loader:$project.properties.fabricloader")
+        if (!stonecutter.eval(minecraft, ">=26.1")) {
+            add(modCompile, "com.terraformersmc:modmenu:$project.properties.modmenu") {
+                exclude group: "net.fabricmc"
+                exclude group: "net.fabricmc.fabric-api"
+            }
+        } else {
+            def modmenuJar = rootProject.file("dev-deps/modmenu-18.0.0-alpha.8.jar")
+            if (modmenuJar.exists()) {
+                add(modCompile, files(modmenuJar))
+                add(modRuntime, files(modmenuJar))
+            }
         }
-        modLocalRuntime "com.terraformersmc:modmenu:$project.properties.modmenu", {
-            // Don't transitively pull in Mod Menu's Fabric deps
-            exclude module: "net.fabricmc"
-            exclude module: "net.fabricmc.fabric-api"
-        }
-//        if (stonecutter.eval(minecraft, "<=1.14.4")) {
-//            modApi "me.shedaniel.cloth:config-2:1.8"
-//        } else {
-//            modApi "me.shedaniel.cloth:cloth-config-fabric:$project.properties.cloth_config_version"
-//        }
         if (project.properties.fabric_api_modules == "*") {
             if (project.properties.include_fabric_api_modules == "true") {
                 throw new RuntimeException("You can't include the entirety of Fabric API!")
             }
-            modApi "net.fabricmc.fabric-api:fabric-api:$project.properties.fabric_api_version"
+            add(modApiCfg, "net.fabricmc.fabric-api:fabric-api:$project.properties.fabric_api_version")
         } else {
             for (String module in project.properties.fabric_api_modules.split(",") as String[]) {
                 var dep = fabricApi.module(module, "$project.properties.fabric_api_version")
-                modApi dep
+                add(modApiCfg, dep)
                 if (project.properties.include_fabric_api_modules == "true") {
                     include(dep)
+                }
+            }
+        }
+        if (stonecutter.eval(minecraft, ">=26.1")) {
+            def runtimeModules = project.properties.fabric_api_runtime_modules
+            if (runtimeModules) {
+                for (String module in runtimeModules.toString().split(",") as String[]) {
+                    add(modRuntime, fabricApi.module(module, "$project.properties.fabric_api_version"))
                 }
             }
         }
@@ -184,11 +258,14 @@ dependencies {
 //            modApi "me.shedaniel.cloth:cloth-config-forge:$project.properties.cloth_config_version"
 //        }
     } else if (loader == NEOFORGE) {
-        neoForge "net.neoforged:neoforge:$project.properties.neoforge"
+        if (useNeogradle) {
+            implementation "net.neoforged:neoforge:$project.properties.neoforge"
+        } else {
+            neoForge "net.neoforged:neoforge:$project.properties.neoforge"
+        }
         //modApi "me.shedaniel.cloth:cloth-config-neoforge:$project.properties.cloth_config_version"
     }
-    modImplementation "maven.modrinth:midnightlib:${project.midnightlib_version}"
-    include "maven.modrinth:midnightlib:${project.midnightlib_version}"
+    // MidnightConfig is vendored in src/main/java/eu/midnightdust/lib/config/MidnightConfig.java for all versions
 }
 
 //afterEvaluate {
@@ -253,12 +330,46 @@ processResources {
     }
     doLast {
         if (loader == NEOFORGE) {
+            def mcExact = project.properties.minecraft.toString()
+            // FML 1.x (NeoForge 20.2/20.3) requires the legacy `mandatory = true` field; FML 2.x+
+            // accepts `type = "required"`. Emit both for backward compatibility - newer FMLs ignore
+            // the legacy field and older FMLs ignore `type`.
+            def depFields = stonecutter.eval(minecraft, "<1.20.4")
+                    ? "mandatory = true\ntype = \"required\""
+                    : "type = \"required\""
             fileTree(dir: outputs.files.asPath, include: "META-INF/mods.toml").each { File file ->
                 file.text += "\n\n[[mixins]]\nconfig = \"${project.properties.mod_id}.mixins.json\""
+                file.text += "\n\n[[dependencies.${project.properties.mod_id.toLowerCase()}]]\nmodId = \"minecraft\"\n${depFields}\nversionRange = \"[${mcExact}]\"\nordering = \"NONE\"\nside = \"CLIENT\""
             }
             fileTree(dir: outputs.files.asPath, include: "META-INF/mods.toml").each { File file ->
                 Files.copy(file.toPath(), java.nio.file.Path.of(outputs.files.asPath).resolve("META-INF/neoforge.mods.toml"), StandardCopyOption.REPLACE_EXISTING)
-                file.delete()
+                // NeoForge 20.2-20.4 (FML 1.x/2.x) only knows mods.toml; 20.5+ uses neoforge.mods.toml.
+                // Keeping both for the older versions costs nothing and lets the same inner jar load
+                // on both old and new NeoForge runtimes.
+                if (stonecutter.eval(minecraft, ">=1.20.5")) {
+                    file.delete()
+                }
+            }
+        }
+        // Strip 26.1+-only mixins from the mixins.json on older versions so the mixin loader doesn't crash on missing classes.
+        if (!stonecutter.eval(minecraft, ">=26.1")) {
+            def newerOnlyMixins = [
+                    "AbstractFelineModelAccessor",
+                    "OwaLivingRenderStateMixin",
+                    "OwaRendererCaptureMixin"
+            ] as Set
+            fileTree(dir: outputs.files.asPath, include: "${E.p.mod_id}.mixins.json").each { File file ->
+                def parsed = new JsonSlurper().parse(file)
+                if (parsed.client instanceof List) {
+                    parsed.client = parsed.client.findAll { !newerOnlyMixins.contains(it) }
+                }
+                if (parsed.mixins instanceof List) {
+                    parsed.mixins = parsed.mixins.findAll { !newerOnlyMixins.contains(it) }
+                }
+                if (parsed.server instanceof List) {
+                    parsed.server = parsed.server.findAll { !newerOnlyMixins.contains(it) }
+                }
+                file.text = JsonOutput.prettyPrint(JsonOutput.toJson(parsed))
             }
         }
         if (loader == FABRIC) {
@@ -274,7 +385,32 @@ processResources {
                         parse.depends[s] = "^" + fabricApi.module(s, project.properties.fabric_api_version).getVersion()
                     }
                 }
+                parse.depends["minecraft"] = "=" + project.properties.minecraft
+                if (stonecutter.eval(minecraft, ">=26.1")) {
+                    parse.remove("accessWidener")
+                }
                 file.text = JsonOutput.prettyPrint(JsonOutput.toJson(parse))
+            }
+            if (stonecutter.eval(minecraft, ">=26.1")) {
+                fileTree(dir: outputs.files.asPath, include: "${E.p.mod_id}.accesswidener").each { File file ->
+                    file.delete()
+                }
+                def stubMixins = [
+                        "LivingEntityMixin"
+                ] as Set
+                fileTree(dir: outputs.files.asPath, include: "${E.p.mod_id}.mixins.json").each { File file ->
+                    def parsed = new JsonSlurper().parse(file)
+                    if (parsed.client instanceof List) {
+                        parsed.client = parsed.client.findAll { !stubMixins.contains(it) }
+                    }
+                    if (parsed.mixins instanceof List) {
+                        parsed.mixins = parsed.mixins.findAll { !stubMixins.contains(it) }
+                    }
+                    if (parsed.server instanceof List) {
+                        parsed.server = parsed.server.findAll { !stubMixins.contains(it) }
+                    }
+                    file.text = JsonOutput.prettyPrint(JsonOutput.toJson(parsed))
+                }
             }
         }
     }
@@ -286,9 +422,14 @@ processResources {
     }
 }
 
-remapJar {
-    if (loader == FORGE || loader == NEOFORGE) {
-        atAccessWideners.add("${project.properties.mod_id}.accesswidener")
+if (!useNeogradle && !stonecutter.eval(minecraft, ">=26.1")) {
+    remapJar {
+        // 1.20.x-neoforge skips the AW (see comment in the loom block above), so don't try to
+        // convert it into a forge AccessTransformer either - the file isn't there.
+        boolean skipAw = loader == NEOFORGE && stonecutter.eval(minecraft, ">=1.20.2") && !useNeogradle
+        if ((loader == FORGE || loader == NEOFORGE) && !skipAw) {
+            atAccessWideners.add("${project.properties.mod_id}.accesswidener")
+        }
     }
 }
 
@@ -309,7 +450,8 @@ if (loader == FABRIC) {
 }
 
 afterEvaluate {
-    packageJar.dependsOn(remapJar)
-    packageJar.from(remapJar.archiveFile)
+    def finalJar = (useNeogradle || stonecutter.eval(minecraft, ">=26.1")) ? tasks.named("jar") : tasks.named("remapJar")
+    packageJar.dependsOn(finalJar)
+    packageJar.from(finalJar.map { it.archiveFile })
     build.finalizedBy(packageJar)
 }

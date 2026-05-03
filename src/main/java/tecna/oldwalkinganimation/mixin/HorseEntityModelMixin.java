@@ -1,11 +1,118 @@
 package tecna.oldwalkinganimation.mixin;
 
-import net.minecraft.client.model.ModelPart;
+//? if >=26.1 || (neoforge && >=1.21.2) {
+//? if >=1.21.11 {
+import net.minecraft.client.model.animal.equine.AbstractEquineModel;
+//?} else {
+/*import net.minecraft.client.model.AbstractEquineModel;
+*///?}
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.entity.state.EquineRenderState;
+import net.minecraft.world.entity.LivingEntity;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import tecna.oldwalkinganimation.OwaLegAnim;
+import tecna.oldwalkinganimation.SharedValueUtil;
+
+@Mixin(AbstractEquineModel.class)
+public abstract class HorseEntityModelMixin {
+
+    @Shadow protected ModelPart headParts;
+    @Shadow protected ModelPart rightHindLeg;
+    @Shadow protected ModelPart leftHindLeg;
+    @Shadow protected ModelPart rightFrontLeg;
+    @Shadow protected ModelPart leftFrontLeg;
+
+    @Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/EquineRenderState;)V", at = @At("RETURN"))
+    private void owa$setupAnim(EquineRenderState state, CallbackInfo ci) {
+        LivingEntity entity = OwaLegAnim.entityFor(state);
+        if (entity == null) return;
+
+        float var8 = SharedValueUtil.getVar8(entity);
+        float ismoving = SharedValueUtil.getIsMoving(entity);
+
+        OwaLegAnim.quadLegs(rightHindLeg, leftHindLeg, rightFrontLeg, leftFrontLeg, var8, ismoving);
+        OwaLegAnim.headBob(headParts, var8, ismoving);
+    }
+}
+//?} else if neoforge {
+/*import net.minecraft.client.model.HorseModel;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.entity.LivingEntity;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import tecna.oldwalkinganimation.OwaLegAnim;
+import tecna.oldwalkinganimation.SharedValueUtil;
+
+@Mixin(HorseModel.class)
+public abstract class HorseEntityModelMixin<T extends AbstractHorse> {
+
+    @Shadow protected ModelPart headParts;
+    @Shadow private ModelPart rightHindLeg;
+    @Shadow private ModelPart leftHindLeg;
+    @Shadow private ModelPart rightFrontLeg;
+    @Shadow private ModelPart leftFrontLeg;
+
+    @Inject(method = "setupAnim(Lnet/minecraft/world/entity/animal/horse/AbstractHorse;FFFFF)V", at = @At("RETURN"))
+    private void owa$setupAnim(T entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch, CallbackInfo ci) {
+        LivingEntity le = OwaLegAnim.entityFor(entity);
+        if (le == null) return;
+
+        float var8 = SharedValueUtil.getVar8(le);
+        float ismoving = SharedValueUtil.getIsMoving(le);
+
+        OwaLegAnim.quadLegs(rightHindLeg, leftHindLeg, rightFrontLeg, leftFrontLeg, var8, ismoving);
+        OwaLegAnim.headBob(headParts, var8, ismoving);
+    }
+}
+*///?} else if >=1.21.2 {
+/*import net.minecraft.client.model.ModelPart;
+import net.minecraft.client.render.entity.model.AbstractHorseEntityModel;
+import net.minecraft.client.render.entity.state.LivingHorseEntityRenderState;
+import net.minecraft.entity.LivingEntity;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import tecna.oldwalkinganimation.OwaLegAnim;
+import tecna.oldwalkinganimation.SharedValueUtil;
+
+@Mixin(AbstractHorseEntityModel.class)
+public abstract class HorseEntityModelMixin {
+
+    @Shadow protected ModelPart head;
+    @Shadow private ModelPart rightHindLeg;
+    @Shadow private ModelPart leftHindLeg;
+    @Shadow private ModelPart rightFrontLeg;
+    @Shadow private ModelPart leftFrontLeg;
+
+    @Inject(method = "setAngles(Lnet/minecraft/client/render/entity/state/LivingHorseEntityRenderState;)V", at = @At("RETURN"))
+    private void owa$setupAnim(LivingHorseEntityRenderState state, CallbackInfo ci) {
+        LivingEntity entity = OwaLegAnim.entityFor(state);
+        if (entity == null) return;
+
+        float var8 = SharedValueUtil.getVar8(entity);
+        float ismoving = SharedValueUtil.getIsMoving(entity);
+
+        OwaLegAnim.quadLegs(rightHindLeg, leftHindLeg, rightFrontLeg, leftFrontLeg, var8, ismoving);
+        OwaLegAnim.headBob(head, var8, ismoving);
+    }
+}
+*///?} else {
+/*import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.entity.model.HorseEntityModel;
 //? if >=1.19 {
 import net.minecraft.entity.passive.AbstractHorseEntity;
  //?} else
-/*import net.minecraft.entity.passive.HorseBaseEntity;*/
+/^import net.minecraft.entity.passive.HorseBaseEntity;^/
 import net.minecraft.util.math.MathHelper;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,7 +130,7 @@ public class HorseEntityModelMixin<T extends
         //? if >=1.19 {
         AbstractHorseEntity
         //?} else
-        /*HorseBaseEntity*/
+        /^HorseBaseEntity^/
         > {
 
 
@@ -42,30 +149,6 @@ public class HorseEntityModelMixin<T extends
     private ModelPart leftFrontLeg;
 
 
-//    @ModifyArg(method = "animateModel(Lnet/minecraft/entity/passive/AbstractHorseEntity;FFF)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/MathHelper;cos(F)F"))
-//
-//    private float modifyCosArgument(float x) {
-//        if (enableMod) {
-//
-//       T livingEntity = (T) AbstractHorseEntity;
-//
-//
-//            float var8 = SharedValueUtil.getVar8(AbstractHorseEntity);
-//            float ismoving = SharedValueUtil.getIsMoving(ab);
-//
-//            System.out.println(var8);
-//
-//            //x = MathHelper.cos(r * 0.6f + (float)Math.PI);
-//
-//            x = MathHelper.cos(var8 * 0.6662f + (float) Math.PI) * 1.4f;// * ismoving;
-//            return x;
-//        } else {
-//            return x;
-//        }
-//    }
-//}
-
-
     @Shadow @Final protected ModelPart head;
 
     @Shadow @Final protected ModelPart body;
@@ -82,7 +165,7 @@ public class HorseEntityModelMixin<T extends
     //? if >=1.19 {
     @Inject(method = "animateModel(Lnet/minecraft/entity/passive/AbstractHorseEntity;FFF)V", at = @At("RETURN"))
      //?} else
-    /*@Inject(method = "animateModel(Lnet/minecraft/entity/passive/HorseBaseEntity;FFF)V", at = @At("RETURN"))*/
+    /^@Inject(method = "animateModel(Lnet/minecraft/entity/passive/HorseBaseEntity;FFF)V", at = @At("RETURN"))^/
     public void animateModel(T abstractHorseEntity, float f, float g, float h, CallbackInfo ci) {
 
 
@@ -96,14 +179,13 @@ public class HorseEntityModelMixin<T extends
             f = var8;
             g = ismoving;
 
-           // super.animateModel(abstractHorseEntity, f, g, h);
             float i = MathHelper.lerpAngleDegrees(h, abstractHorseEntity.prevBodyYaw, (abstractHorseEntity).bodyYaw);
             float j = MathHelper.lerpAngleDegrees(h, abstractHorseEntity.prevHeadYaw, abstractHorseEntity.headYaw);
             float k = MathHelper.lerp(h, abstractHorseEntity.prevPitch,
                     //? if >=1.17 {
                     abstractHorseEntity.getPitch());
                     //?} else
-                    /*abstractHorseEntity.pitch);*/
+                    /^abstractHorseEntity.pitch);^/
             float l = j - i;
             float m = k * ((float)Math.PI / 180);
             if (l > 20.0f) {
@@ -175,42 +257,9 @@ public class HorseEntityModelMixin<T extends
             this.body.pivotY = bl2 ? 10.8f : 0.0f;
 
 
-//
-//            float o = ((AbstractHorseEntity) abstractHorseEntity).getAngryAnimationProgress(h);
-//            float p = 1.0f - o;
-//
-//            float s = ((Entity) abstractHorseEntity).isTouchingWater() ? 0.2f : 1.0f;
-//
-//            float t = MathHelper.cos(s * var8 * 0.6662f + (float) Math.PI) * ismoving;
-//
-//            float u = t * 0.8f * g;
-//
-//
-//            float r = (float) ((AbstractHorseEntity) abstractHorseEntity).age + h;
-//
-//            float v = (1.0f - Math.max(o, n)) * (0.5235988f + m + q * MathHelper.sin(r) * 0.05f);
-//            this.head.pitch = o * (0.2617994f + m) + n * (2.1816616f + MathHelper.sin(r) * 0.05f) + v;
-//
-//            float w = 0.2617994f * o;
-//
-//            float x = MathHelper.cos(r * 0.6f + (float) Math.PI);
-//
-//            float y = (-1.0471976f + x) * o + u * p;
-//            float z = (-1.0471976f - x) * o - u * p;
-//
-////        this.rightHindLeg.pitch = MathHelper.cos(var8 * 0.6662f) * 1.4f * ismoving;
-////        this.leftHindLeg.pitch = MathHelper.cos(var8 * 0.6662f + (float) Math.PI) * 1.4f * ismoving;
-////        this.rightFrontLeg.pitch = MathHelper.cos(var8 * 0.6662f + (float) Math.PI) * 1.4f * ismoving;
-////        this.leftFrontLeg.pitch = MathHelper.cos(var8 * 0.6662f) * 1.4f * ismoving;
-//
-//            this.leftHindLeg.pitch = w - t * 0.5f * g * p;
-//            this.rightHindLeg.pitch = w + t * 0.5f * g * p;
-//            this.leftFrontLeg.pitch = y;
-//            this.rightFrontLeg.pitch = z;
-
-
         }
 
     }
 
 }
+*///?}

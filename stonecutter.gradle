@@ -1,10 +1,12 @@
 plugins {
     id "dev.kikugie.stonecutter"
     id "dev.architectury.loom" version "$architectury_loom_version" apply false
+    id "net.fabricmc.fabric-loom" version "$fabric_loom_version" apply false
+    id "net.neoforged.gradle.userdev" version "$neogradle_version" apply false
 }
 
 plugins.apply "dev.kikugie.stonecutter"
-stonecutter.active "1.21-fabric" /* [SC] DO NOT EDIT */
+stonecutter.active "1.21.11-fabric" /* [SC] DO NOT EDIT */
 
 stonecutter.registerChiseled tasks.register("chiseledBuild", stonecutter.chiseled) {
     group = "project"
@@ -16,3 +18,418 @@ stonecutter.registerChiseled tasks.register("chiseledRun", stonecutter.chiseled)
     ofTask("runClient")
 }
 
+import groovy.json.JsonOutput
+
+def fabricVersionList = stonecutter.versions.findAll { it.project.endsWith('-fabric') }
+def neoforgeVersionList = stonecutter.versions.findAll { it.project.endsWith('-neoforge') }
+def modVersion = rootProject.properties.mod_version
+def modId = rootProject.properties.mod_id
+
+tasks.register("buildAllFabric") {
+    group = "bundling"
+    description = "Builds every active fabric per-version jar."
+    fabricVersionList.each { v -> dependsOn ":${v.project}:build" }
+}
+
+tasks.register("buildAllNeoforge") {
+    group = "bundling"
+    description = "Builds every active neoforge per-version jar."
+    neoforgeVersionList.each { v -> dependsOn ":${v.project}:build" }
+}
+
+tasks.register("genFabricBundleManifest") {
+    group = "bundling"
+    description = "Writes the outer fabric.mod.json for the multi-version bundle."
+    def out = layout.buildDirectory.file("bundle-staging/fabric/fabric.mod.json")
+    outputs.file(out)
+    doLast {
+        def manifestJson = [
+            schemaVersion: 1,
+            id           : "${(modId as String).toLowerCase()}_bundle",
+            version      : modVersion,
+            name         : "Old Walking Animation (Multi-Version Bundle)",
+            description  : "Multi-version bundle. Loads the matching per-MC inner jar.",
+            authors      : ["TecnaGamer"],
+            license      : "MIT",
+            environment  : "client",
+            depends      : [
+                fabricloader: ">=0.14.0",
+                minecraft   : ">=1.20.2"
+            ],
+            jars         : fabricVersionList.collect { v -> [file: "META-INF/jars/${v.project}.jar"] }
+        ]
+        def f = out.get().asFile
+        f.parentFile.mkdirs()
+        f.text = JsonOutput.prettyPrint(JsonOutput.toJson(manifestJson))
+    }
+}
+
+tasks.register("bundleFabric", Jar) {
+    group = "bundling"
+    description = "Packages every fabric per-version jar as JIJ inside one outer fabric mod jar."
+    dependsOn "buildAllFabric", "genFabricBundleManifest"
+
+    archiveBaseName.set("${modId}-fabric-bundle")
+    archiveVersion.set(modVersion as String)
+    destinationDirectory.set(layout.buildDirectory.dir("libs/${modVersion}-bundle"))
+
+    manifest {
+        attributes("Manifest-Version": "1.0")
+    }
+
+    fabricVersionList.each { v ->
+        def src = project(":${v.project}").layout.buildDirectory.file("libs/${modId}-${v.project}-${modVersion}+${v.project.replace('-fabric', '').replace('-neoforge', '').replace('-forge', '')}.jar")
+        from(src) {
+            into "META-INF/jars"
+            rename { "${v.project}.jar" }
+        }
+    }
+
+    from(layout.buildDirectory.file("bundle-staging/fabric/fabric.mod.json"))
+}
+
+tasks.register("genNeoforgeBundleManifest") {
+    group = "bundling"
+    description = "Writes the outer neoforge.mods.toml for the multi-version bundle."
+    def tomlOut = layout.buildDirectory.file("bundle-staging/neoforge/META-INF/neoforge.mods.toml")
+    outputs.file(tomlOut)
+    doLast {
+        def tomlText = """\
+modLoader = "lowcodefml"
+loaderVersion = "*"
+license = "MIT"
+
+[[mods]]
+modId = "${(modId as String).toLowerCase()}_bundle"
+version = "${modVersion}"
+displayName = "Old Walking Animation (Multi-Version Bundle)"
+authors = 'TecnaGamer'
+description = "Multi-version bundle. Loads the matching per-MC inner jar."
+"""
+        def tf = tomlOut.get().asFile
+        tf.parentFile.mkdirs()
+        tf.text = tomlText
+    }
+}
+
+def routerSrc = file("bundle-router/src/main/java")
+def routerRes = file("bundle-router/src/main/resources")
+def routerClasses = layout.buildDirectory.dir("bundle-router/classes")
+
+tasks.register("compileBundleRouter", JavaCompile) {
+    group = "bundling"
+    description = "Compiles the runtime router class against NeoForge SPI."
+    source = fileTree(routerSrc) { include "**/*.java" }
+    destinationDirectory.set(routerClasses)
+    classpath = files(
+        "/home/tecnagamer/.gradle/caches/modules-2/files-2.1/net.neoforged.fancymodloader/loader/11.0.13/c9c89eaf35535990110088224d188748d81eaecf/loader-11.0.13.jar"
+    )
+    // Java 17 bytecode so the locator class loads on the oldest supported NeoForge runtime
+    // (1.20.2-1.20.4 still ship JRE 17). Newer NF (Java 21+) is forward-compatible.
+    sourceCompatibility = "17"
+    targetCompatibility = "17"
+    options.release.set(17)
+}
+
+tasks.register("bundleNeoforge", Jar) {
+    group = "bundling"
+    description = "Packages every neoforge per-version jar inside one outer neoforge mod jar with a runtime router."
+    dependsOn "buildAllNeoforge", "genNeoforgeBundleManifest", "compileBundleRouter"
+
+    archiveBaseName.set("${modId}-neoforge-bundle")
+    archiveVersion.set(modVersion as String)
+    destinationDirectory.set(layout.buildDirectory.dir("libs/${modVersion}-bundle"))
+
+    manifest {
+        attributes("Manifest-Version": "1.0")
+    }
+
+    neoforgeVersionList.each { v ->
+        def src = project(":${v.project}").layout.buildDirectory.file("libs/${modId}-${v.project}-${modVersion}+${v.project.replace('-fabric', '').replace('-neoforge', '').replace('-forge', '')}.jar")
+        from(src) {
+            into "META-INF/owa-jars"
+            rename { "${v.project}.jar" }
+        }
+    }
+
+    from(layout.buildDirectory.dir("bundle-staging/neoforge")) {
+        include "META-INF/neoforge.mods.toml"
+    }
+    from(routerRes)
+    from(routerClasses)
+}
+
+// Combined fabric+neoforge bundle. Stuffs both fabric inners (at META-INF/jars/) and neoforge inners
+// (at META-INF/owa-jars/, picked at runtime by OwaBundleLocator) into one outer jar with both
+// loader manifests. Each loader only sees the inners it knows how to load.
+
+tasks.register("genCombinedFabricManifest") {
+    group = "bundling"
+    description = "Writes the outer fabric.mod.json for the combined fabric+neoforge bundle."
+    def out = layout.buildDirectory.file("bundle-staging/combined/fabric.mod.json")
+    outputs.file(out)
+    doLast {
+        // Outer bundle's depends are intentionally permissive so the bundle itself loads on a wide
+        // range of fabric-loaders + MC versions. The inner jars enforce their exact-MC matching.
+        def manifestJson = [
+            schemaVersion: 1,
+            id           : "${(modId as String).toLowerCase()}_bundle",
+            version      : modVersion,
+            name         : "Old Walking Animation (Multi-Loader Bundle)",
+            description  : "Multi-loader bundle. Loads the matching per-MC inner jar on Fabric or NeoForge.",
+            authors      : ["TecnaGamer"],
+            license      : "MIT",
+            environment  : "client",
+            depends      : [
+                fabricloader: ">=0.14.0",
+                minecraft   : ">=1.20.2"
+            ],
+            jars         : fabricVersionList.collect { v -> [file: "META-INF/jars/${v.project}.jar"] }
+        ]
+        def f = out.get().asFile
+        f.parentFile.mkdirs()
+        f.text = JsonOutput.prettyPrint(JsonOutput.toJson(manifestJson))
+    }
+}
+
+tasks.register("genCombinedNeoforgeManifest") {
+    group = "bundling"
+    description = "Writes the outer neoforge.mods.toml for the combined fabric+neoforge bundle."
+    def tomlOut = layout.buildDirectory.file("bundle-staging/combined/META-INF/neoforge.mods.toml")
+    outputs.file(tomlOut)
+    doLast {
+        def tomlText = """\
+modLoader = "lowcodefml"
+loaderVersion = "*"
+license = "MIT"
+
+[[mods]]
+modId = "${(modId as String).toLowerCase()}_bundle"
+version = "${modVersion}"
+displayName = "Old Walking Animation (Multi-Loader Bundle)"
+authors = 'TecnaGamer'
+description = "Multi-loader bundle. Loads the matching per-MC inner jar on Fabric or NeoForge."
+"""
+        def tf = tomlOut.get().asFile
+        tf.parentFile.mkdirs()
+        tf.text = tomlText
+    }
+}
+
+// Hashes a per-version mod jar by its compiled class files only (ignoring metadata + resources).
+// Versions that differ only in MC dep / build metadata produce the same hash and can share a
+// single inner jar in the bundle.
+def hashJarClasses = { File jarFile ->
+    def md = java.security.MessageDigest.getInstance("SHA-256")
+    new java.util.zip.ZipFile(jarFile).withCloseable { zf ->
+        def names = zf.entries().toList().findAll { it.name.endsWith(".class") }.collect { it.name }.sort()
+        names.each { n ->
+            def e = zf.getEntry(n)
+            zf.getInputStream(e).withCloseable { is ->
+                md.update(is.readAllBytes())
+            }
+        }
+    }
+    return md.digest().encodeHex().toString()
+}
+
+// Splits "1.20.4-fabric" into ["1.20.4", "fabric"].
+def splitVer = { String project ->
+    int idx = project.lastIndexOf('-')
+    return [project.substring(0, idx), project.substring(idx + 1)]
+}
+
+// Compares two MC version strings like "1.21.10" and "1.21.2" properly (numeric per segment).
+def cmpMc = { String a, String b ->
+    def aa = a.split('\\.').collect { it.toInteger() }
+    def bb = b.split('\\.').collect { it.toInteger() }
+    int n = Math.max(aa.size(), bb.size())
+    for (int i = 0; i < n; i++) {
+        int va = i < aa.size() ? aa[i] : 0
+        int vb = i < bb.size() ? bb[i] : 0
+        if (va != vb) return va <=> vb
+    }
+    return 0
+}
+
+// Builds a bundle entry plan for a list of version-projects: groups projects by identical class
+// hash and emits {canonical, mcVersions[], depends, displayName} per group. The canonical project
+// is the lowest MC version in the group; its inner jar is the one written into the bundle, with
+// the fabric.mod.json depends.minecraft widened to span the group when there's more than one MC.
+def planBundleEntries = { List<Object> versionList, String loader ->
+    def groups = [:].withDefault { [] }
+    versionList.each { v ->
+        def jarFile = project(":${v.project}").layout.buildDirectory.file("libs/${modId}-${v.project}-${modVersion}+${v.project.replace('-fabric', '').replace('-neoforge', '').replace('-forge', '')}.jar").get().asFile
+        if (!jarFile.exists()) throw new GradleException("Missing built jar: ${jarFile}")
+        def hash = hashJarClasses(jarFile)
+        groups[hash] << v
+    }
+    def plan = []
+    groups.values().each { entries ->
+        // Sort by MC version ascending so the canonical is the lowest version.
+        def sorted = entries.sort { a, b ->
+            cmpMc(splitVer(a.project)[0], splitVer(b.project)[0])
+        }
+        def canon = sorted.first()
+        def mcVersions = sorted.collect { splitVer(it.project)[0] }
+        plan << [canon: canon, mcVersions: mcVersions, all: sorted]
+    }
+    return plan.sort { a, b -> cmpMc(splitVer(a.canon.project)[0], splitVer(b.canon.project)[0]) }
+}
+
+// Stages deduped fabric inner jars: writes one physical jar per identical-class group with the
+// fabric.mod.json depends.minecraft widened to "<lo> <=hi>" so fabric's JIJ resolution picks it
+// for any MC version in the group.
+tasks.register("stageDedupedFabricInners") {
+    group = "bundling"
+    description = "Picks one fabric inner jar per identical-class group and widens its depends.minecraft to span the group."
+    dependsOn "buildAllFabric"
+    def outDir = layout.buildDirectory.dir("bundle-staging/dedup-fabric")
+    outputs.dir(outDir)
+    // Without these the task is up-to-date even after per-version sources change, because Gradle
+    // can't infer the staged-output dependency on the project(":Xx-fabric") build/libs jar paths
+    // that the doLast block reads from project state.
+    inputs.files(fabricVersionList.collect { v -> project(":${v.project}").layout.buildDirectory.file("libs/${modId}-${v.project}-${modVersion}+${v.project.replace('-fabric', '').replace('-neoforge', '').replace('-forge', '')}.jar") })
+    doLast {
+        def staged = outDir.get().asFile
+        staged.deleteDir()
+        staged.mkdirs()
+
+        def plan = planBundleEntries(fabricVersionList, "fabric")
+        def index = []
+        def slurper = new groovy.json.JsonSlurper()
+
+        plan.each { g ->
+            def srcJar = project(":${g.canon.project}").layout.buildDirectory.file("libs/${modId}-${g.canon.project}-${modVersion}+${g.canon.project.replace('-fabric', '').replace('-neoforge', '').replace('-forge', '')}.jar").get().asFile
+            def lo = g.mcVersions.first()
+            def hi = g.mcVersions.last()
+            def coverName = g.mcVersions.size() == 1 ? "${lo}-fabric.jar" : "${lo}_to_${hi}-fabric.jar"
+            def dst = new File(staged, coverName)
+
+            // Copy the canonical jar then rewrite fabric.mod.json depends.minecraft inside it.
+            dst.bytes = srcJar.bytes
+            def uri = java.net.URI.create("jar:" + dst.toURI().toString())
+            def env = java.nio.file.FileSystems.newFileSystem(uri, [:])
+            try {
+                def inJson = env.getPath("fabric.mod.json")
+                def parsed
+                java.nio.file.Files.newInputStream(inJson).withCloseable { is ->
+                    parsed = slurper.parse(is)
+                }
+                if (g.mcVersions.size() == 1) {
+                    parsed.depends["minecraft"] = "=${lo}"
+                } else {
+                    parsed.depends["minecraft"] = ">=${lo} <=${hi}"
+                }
+                java.nio.file.Files.writeString(inJson, JsonOutput.prettyPrint(JsonOutput.toJson(parsed)))
+            } finally {
+                env.close()
+            }
+
+            index << [name: coverName, mcVersions: g.mcVersions]
+            println "[bundleAll dedup-fabric] ${coverName} <- ${g.all*.project} (${g.mcVersions.size()} MC versions)"
+        }
+        new File(staged, "bundle-index.json").text = JsonOutput.prettyPrint(JsonOutput.toJson([entries: index]))
+    }
+}
+
+// Stages deduped neoforge inner jars: one physical jar per identical-class group, plus an
+// index file the runtime locator uses to map MC version -> jar name.
+tasks.register("stageDedupedNeoforgeInners") {
+    group = "bundling"
+    description = "Picks one neoforge inner jar per identical-class group and emits an index for the bundle locator."
+    dependsOn "buildAllNeoforge"
+    def outDir = layout.buildDirectory.dir("bundle-staging/dedup-neoforge")
+    outputs.dir(outDir)
+    inputs.files(neoforgeVersionList.collect { v -> project(":${v.project}").layout.buildDirectory.file("libs/${modId}-${v.project}-${modVersion}+${v.project.replace('-fabric', '').replace('-neoforge', '').replace('-forge', '')}.jar") })
+    doLast {
+        def staged = outDir.get().asFile
+        staged.deleteDir()
+        staged.mkdirs()
+
+        def plan = planBundleEntries(neoforgeVersionList, "neoforge")
+        def index = []
+
+        plan.each { g ->
+            def srcJar = project(":${g.canon.project}").layout.buildDirectory.file("libs/${modId}-${g.canon.project}-${modVersion}+${g.canon.project.replace('-fabric', '').replace('-neoforge', '').replace('-forge', '')}.jar").get().asFile
+            def lo = g.mcVersions.first()
+            def hi = g.mcVersions.last()
+            def coverName = g.mcVersions.size() == 1 ? "${lo}-neoforge.jar" : "${lo}_to_${hi}-neoforge.jar"
+            def dst = new File(staged, coverName)
+            dst.bytes = srcJar.bytes
+
+            // Widen the inner jar's neoforge.mods.toml versionRange so FML accepts the inner on
+            // any MC version in the group. The canonical jar was built with a strict
+            // `versionRange = "[lo]"`; rewrite that line to `"[lo,hi]"` for multi-MC groups.
+            if (g.mcVersions.size() > 1) {
+                def uri = java.net.URI.create("jar:" + dst.toURI().toString())
+                def env = java.nio.file.FileSystems.newFileSystem(uri, [:])
+                try {
+                    def tomlPath = env.getPath("META-INF/neoforge.mods.toml")
+                    if (java.nio.file.Files.exists(tomlPath)) {
+                        def text = java.nio.file.Files.readString(tomlPath)
+                        // Match `versionRange = "[<anything>]"` and replace with `[lo,hi]`.
+                        text = text.replaceAll(/(?m)^(\s*versionRange\s*=\s*)"\[[^\]]*]"/, '$1"[' + lo + ',' + hi + ']"')
+                        java.nio.file.Files.writeString(tomlPath, text)
+                    }
+                } finally {
+                    env.close()
+                }
+            }
+
+            index << [name: coverName, mcVersions: g.mcVersions]
+            println "[bundleAll dedup-neoforge] ${coverName} <- ${g.all*.project} (${g.mcVersions.size()} MC versions)"
+        }
+        new File(staged, "bundle-index.json").text = JsonOutput.prettyPrint(JsonOutput.toJson([entries: index]))
+    }
+}
+
+tasks.register("bundleAll", Jar) {
+    group = "bundling"
+    description = "Packages deduped fabric+neoforge per-version jars inside one outer jar that loads on either loader."
+    dependsOn "stageDedupedFabricInners", "stageDedupedNeoforgeInners",
+              "genCombinedFabricManifest", "genCombinedNeoforgeManifest",
+              "compileBundleRouter"
+
+    archiveBaseName.set("${modId}-bundle")
+    archiveVersion.set(modVersion as String)
+    destinationDirectory.set(layout.buildDirectory.dir("libs/${modVersion}-bundle"))
+
+    manifest {
+        attributes("Manifest-Version": "1.0")
+    }
+
+    // Fabric inners (deduped) at META-INF/jars/. The outer fabric.mod.json's `jars` array is
+    // generated based on what's actually staged (see doFirst below).
+    from(layout.buildDirectory.dir("bundle-staging/dedup-fabric")) {
+        include "*.jar"
+        into "META-INF/jars"
+    }
+
+    // NeoForge inners (deduped) at META-INF/owa-jars/. bundle-index.json tells OwaBundleLocator
+    // which jar to extract for the running MC version.
+    from(layout.buildDirectory.dir("bundle-staging/dedup-neoforge")) {
+        include "*.jar"
+        include "bundle-index.json"
+        into "META-INF/owa-jars"
+    }
+
+    from(layout.buildDirectory.dir("bundle-staging/combined")) {
+        include "META-INF/neoforge.mods.toml"
+    }
+    from(routerRes)
+    from(routerClasses)
+
+    // Rewrite the outer fabric.mod.json's `jars` array to reference the actually-staged
+    // (deduped) inner jars rather than every per-version jar.
+    doFirst {
+        def stagedFabric = layout.buildDirectory.dir("bundle-staging/dedup-fabric").get().asFile
+        def innerJars = stagedFabric.listFiles().findAll { it.name.endsWith(".jar") }.collect { it.name }.sort()
+        def outerFmj = layout.buildDirectory.file("bundle-staging/combined/fabric.mod.json").get().asFile
+        def slurper = new groovy.json.JsonSlurper()
+        def parsed = slurper.parse(outerFmj)
+        parsed.jars = innerJars.collect { [file: "META-INF/jars/${it}"] }
+        outerFmj.text = JsonOutput.prettyPrint(JsonOutput.toJson(parsed))
+    }
+    from(layout.buildDirectory.file("bundle-staging/combined/fabric.mod.json"))
+}

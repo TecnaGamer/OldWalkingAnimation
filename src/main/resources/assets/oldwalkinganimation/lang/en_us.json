@@ -28,6 +28,8 @@
   "oldwalkinganimation.midnightconfig.bounce.tooltip":"Makes mobs/players bounce up and down when walking/running",
   "oldwalkinganimation.midnightconfig.bounceHeight":"Bounce Height",
   "oldwalkinganimation.midnightconfig.bounceHeight.tooltip":"Changes the bouncing height",
+  "oldwalkinganimation.midnightconfig.bounceInverted":"Invert Bounce Phase",
+  "oldwalkinganimation.midnightconfig.bounceInverted.tooltip":"Flips the bounce out of phase with the limb swing.\nOff: feet are straight down at the bottom of the bounce.\nOn: feet are swung out at the bottom of the bounce (classic c0.0.23a-style look).",
 
 
 
@@ -36,9 +38,18 @@
 
   "oldwalkinganimation.midnightconfig.speed":"Animation Speed",
   "oldwalkinganimation.midnightconfig.speed.tooltip":"Changes how fast the bouncing and arm & leg animation plays\n§7§oIf Use Vanilla speed is enabled then this setting will do nothing",
+  "oldwalkinganimation.midnightconfig.maxSpeed":"Max Animation Speed",
+  "oldwalkinganimation.midnightconfig.maxSpeed.tooltip":"Caps how fast the animation can play regardless of movement speed.\n§7§oSet to 1.0 to disable the cap.",
+  "oldwalkinganimation.midnightconfig.speedTrigger":"Animation Speed Trigger",
+  "oldwalkinganimation.midnightconfig.speedTrigger.tooltip":"Minimum movement speed before the animation starts playing.",
   "oldwalkinganimation.midnightconfig.vanillaSpeed":"Use Vanilla Speed",
   "oldwalkinganimation.midnightconfig.vanillaSpeed.tooltip":"This makes the arm & leg swing/bounce use the vanilla speed\n§7§oThis setting will disable the speed and max speed sliders",
-  "oldwalkinganimation.midnightconfig.speedLimbAngle":"Speed effects arm & leg swing/bounce amount",
+  "oldwalkinganimation.midnightconfig.speedLimbAngle":"Speed Affects Limb Swing",
+  "oldwalkinganimation.midnightconfig.speedLimbAngle.tooltip":"When on, movement speed scales the arm & leg swing amount.",
+  "oldwalkinganimation.midnightconfig.smoothing":"Smoothing",
+  "oldwalkinganimation.midnightconfig.smoothing.tooltip":"Smoothly transitions the animation between moving and still states.",
+  "oldwalkinganimation.midnightconfig.decayFactor":"Smoothing Decay Factor",
+  "oldwalkinganimation.midnightconfig.decayFactor.tooltip":"How quickly the smoothing responds. Higher values snap faster.",
 
 
 
@@ -48,14 +59,25 @@
 
 
   "oldwalkinganimation.midnightconfig.damage":"Enable Old Death & Damage Animation",
+  "oldwalkinganimation.midnightconfig.damage.tooltip":"Replaces the vanilla hit wobble with the classic spin-and-lean death/damage animation.",
   "oldwalkinganimation.midnightconfig.velocity":"Use Velocity",
+  "oldwalkinganimation.midnightconfig.velocity.tooltip":"Derives the damage lean angle from the attacker's direction instead of the fixed classic source angle.",
   "oldwalkinganimation.midnightconfig.fallback":"Enable Fallback",
+  "oldwalkinganimation.midnightconfig.fallback.tooltip":"If the velocity source can't be determined, fall back to the fixed classic lean angle.",
+  "oldwalkinganimation.midnightconfig.damageIntensity":"Damage Intensity",
+  "oldwalkinganimation.midnightconfig.damageIntensity.tooltip":"How far the entity leans over on damage. 14 matches classic.",
   "oldwalkinganimation.midnightconfig.lockRot":"Lock Damage Rotation",
+  "oldwalkinganimation.midnightconfig.lockRot.tooltip":"Freezes the damage lean angle until the animation ends, preventing mid-animation jitter.",
 
   "oldwalkinganimation.midnightconfig.damageFlashInfo":"Damage Flash Settings",
 
   "oldwalkinganimation.midnightconfig.damageFlash":"Enable Custom Damage Flash",
-  "oldwalkinganimation.midnightconfig.damageGlow":"Damage Glow",
+  "oldwalkinganimation.midnightconfig.damageFlash.tooltip":"Tints the entity with a custom color when hurt instead of the vanilla red flash.",
+  "oldwalkinganimation.midnightconfig.alpha":"Damage Flash Alpha",
+  "oldwalkinganimation.midnightconfig.alpha.tooltip":"Opacity of the damage-flash tint (0-255).",
+  "oldwalkinganimation.midnightconfig.red":"Red",
+  "oldwalkinganimation.midnightconfig.green":"Green",
+  "oldwalkinganimation.midnightconfig.blue":"Blue",
 
   "oldwalkinganimation.midnightconfig.category.arm":"1st Person Arm",
 
@@ -63,20 +85,79 @@
 
 
   "oldwalkinganimation.midnightconfig.enableArm":"Enable Custom First Person Arm",
+  "oldwalkinganimation.midnightconfig.enableArm.tooltip":"Replaces the vanilla first-person arm position/rotation with the custom values below.",
 
   "oldwalkinganimation.midnightconfig.armLocationInfo":"Edit Arm Position",
   "oldwalkinganimation.midnightconfig.armRotationInfo":"Edit Arm Rotation",
+
+  "oldwalkinganimation.midnightconfig.Ytrans":"Y Offset",
+  "oldwalkinganimation.midnightconfig.Ytrans.tooltip":"Vertical offset of the first-person arm.",
+  "oldwalkinganimation.midnightconfig.Xtrans":"X Offset",
+  "oldwalkinganimation.midnightconfig.Xtrans.tooltip":"Horizontal offset of the first-person arm.",
+  "oldwalkinganimation.midnightconfig.Ztrans":"Z Offset",
+  "oldwalkinganimation.midnightconfig.Ztrans.tooltip":"Depth offset of the first-person arm.",
+  "oldwalkinganimation.midnightconfig.Pitch":"Pitch",
+  "oldwalkinganimation.midnightconfig.Pitch.tooltip":"Pitch rotation of the first-person arm.",
+  "oldwalkinganimation.midnightconfig.Roll":"Roll",
+  "oldwalkinganimation.midnightconfig.Roll.tooltip":"Roll rotation of the first-person arm.",
+  "oldwalkinganimation.midnightconfig.Yaw":"Yaw",
+  "oldwalkinganimation.midnightconfig.Yaw.tooltip":"Yaw rotation of the first-person arm.",
 
 
   "oldwalkinganimation.midnightconfig.category.limbs":"Limb Settings",
 
   "oldwalkinganimation.midnightconfig.armInfo":"Arm Settings",
   "oldwalkinganimation.midnightconfig.arms":"Enable Arm Flailing Animation",
-  "oldwalkinganimation.midnightconfig.ridingMobAnimation":"Arm And Leg Animation Play Wile Riding",
+  "oldwalkinganimation.midnightconfig.arms.tooltip":"Swings the arms in the classic flailing pattern while walking.",
+  "oldwalkinganimation.midnightconfig.ridingMobAnimation":"Animate While Riding",
+  "oldwalkinganimation.midnightconfig.ridingMobAnimation.tooltip":"Keeps the arm and leg animation playing when the player is riding a mob.",
+  "oldwalkinganimation.midnightconfig.classicRun":"Classic Always-Run",
+  "oldwalkinganimation.midnightconfig.classicRun.tooltip":"Plays the walking animation continuously, even while standing still.",
   "oldwalkinganimation.midnightconfig.tpose":"T-Pose",
+  "oldwalkinganimation.midnightconfig.tpose.tooltip":"Holds the arms straight out to the sides when idle.",
+  "oldwalkinganimation.midnightconfig.tposeAngle":"T-Pose Angle",
+  "oldwalkinganimation.midnightconfig.tposeAngle.tooltip":"How far the arms are held out in the T-pose.",
+  "oldwalkinganimation.midnightconfig.sneakPose17":"Pre-1.8 Sneak Pose",
+  "oldwalkinganimation.midnightconfig.sneakPose17.tooltip":"Uses the pre-1.8 sneaking arm pose instead of the modern one.",
 
 
   "oldwalkinganimation.midnightconfig.headInfo":"Head Settings",
 
-  "oldwalkinganimation.midnightconfig.headBob":"Enable HeadBanging Animation"
+  "oldwalkinganimation.midnightconfig.headBob":"Enable Head Bob Animation",
+  "oldwalkinganimation.midnightconfig.headBob.tooltip":"Bobs the head side-to-side and up-and-down while moving.",
+  "oldwalkinganimation.midnightconfig.headSpeed":"Head Bob Speed",
+  "oldwalkinganimation.midnightconfig.headSpeed.tooltip":"How fast the head bobs while walking.",
+  "oldwalkinganimation.midnightconfig.headAmount":"Head Bob Intensity",
+  "oldwalkinganimation.midnightconfig.headAmount.tooltip":"How far the head bobs while walking.",
+
+  "oldwalkinganimation.midnightconfig.category.steves":"Classic Humans",
+  "oldwalkinganimation.midnightconfig.steveInfo":"Classic Humans",
+  "oldwalkinganimation.midnightconfig.enableSteve":"Enable Classic Human Spawner",
+  "oldwalkinganimation.midnightconfig.enableSteve.tooltip":"Press the keybind to spawn a Classic Human that wanders around. Client-side only — invisible to the server.",
+  "oldwalkinganimation.midnightconfig.maxHumans":"Max Classic Humans",
+  "oldwalkinganimation.midnightconfig.maxHumans.tooltip":"Upper limit on how many Classic Humans can exist at once. 0 = unlimited.",
+  "oldwalkinganimation.midnightconfig.naturalSpawning":"Natural Spawning",
+  "oldwalkinganimation.midnightconfig.naturalSpawning.tooltip":"Spawns Classic Humans from the sky when chunks load, like old Minecraft versions did on world load.",
+  "oldwalkinganimation.midnightconfig.naturalSpawnChance":"Spawn Chance Per Chunk (%)",
+  "oldwalkinganimation.midnightconfig.naturalSpawnChance.tooltip":"Chance that a loaded chunk will spawn a Classic Human.\n40% matches the original ~100 humans per small indev world (100 / 256 chunks).",
+  "oldwalkinganimation.midnightconfig.authenticPhysics":"Authentic Pre-Classic Physics",
+  "oldwalkinganimation.midnightconfig.authenticPhysics.tooltip":"When on: 1-to-1 pre-Classic Zombie physics (jump 0.5, ground accel 0.1, jump chance 0.08, ground friction *0.7).\nWhen off: gentler modern-feel physics (jump 0.42, ground accel 0.02, jump chance 0.04, ground friction *0.8).",
+  "oldwalkinganimation.midnightconfig.rdEarlyPhysics":"rd-132328 Slow Physics",
+  "oldwalkinganimation.midnightconfig.rdEarlyPhysics.tooltip":"Uses the earliest Zombie physics (rd-132328): gravity 0.005, jump 0.12, ground accel 0.02, jump chance 0.01, friction *0.8.\nFloaty, slow, original pre-Classic feel.",
+  "oldwalkinganimation.midnightconfig.steveClassicAnim":"Force Classic Animation",
+  "oldwalkinganimation.midnightconfig.steveClassicAnim.tooltip":"Makes Classic Humans use the classic old-animation preset regardless of your current settings",
+  "oldwalkinganimation.midnightconfig.rdHeadBob":"rd-20090515 Head Bob",
+  "oldwalkinganimation.midnightconfig.rdHeadBob.tooltip":"On: Classic Humans bob their heads in the rd-20090515 style.\nOff: no head bob (matches c0.0.15a and c0.0.23a).",
+  "oldwalkinganimation.midnightconfig.rdStyleLimbs":"rd-Style Limb Animation (sin)",
+  "oldwalkinganimation.midnightconfig.rdStyleLimbs.tooltip":"On: sine-based limbs — legs point straight down at the bottom of the bounce (rd-20090515 / c0.0.15a).\nOff: cosine-based limbs — legs swung out at the bottom of the bounce (c0.0.23a).\n\nCombine with Head Bob to get three real presets:\n- Head Bob ON + Limbs ON = rd-20090515\n- Head Bob OFF + Limbs ON = c0.0.15a\n- Head Bob OFF + Limbs OFF = c0.0.23a",
+  "oldwalkinganimation.midnightconfig.steveShowNames":"Show Name Tags",
+  "oldwalkinganimation.midnightconfig.steveShowNames.tooltip":"Draws a name label above each Classic Human.\nName source:\n- Default skins: skin name (Steve, Alex, Zuri, ...)\n- Your Skin / Random Seen Player: the real player name\n- Classic Steve: \"Steve\"\n- Custom Skin: \"Custom\"",
+  "oldwalkinganimation.midnightconfig.steveCustomSkinSources":"Custom Skins",
+  "oldwalkinganimation.midnightconfig.steveCustomSkinSources.placeholder":"Names or URLs, comma-separated",
+  "oldwalkinganimation.midnightconfig.steveCustomSkinSources.tooltip":"Comma-separated list of Minecraft player names or skin URLs.",
+  "oldwalkinganimation.midnightconfig.steveSkinMode":"Skin Mode",
+  "oldwalkinganimation.midnightconfig.steveSkinMode.tooltip":"Which skin to use for spawned Classic Humans.\n- Random Default: random stock skin per Human\n- Classic Steve: the original pre-2022 Steve skin (drop PNG at assets/oldwalkinganimation/textures/entity/classic_steve.png)\n- Your Skin: uses the skin you're wearing\n- Random Seen Player: random skin of a player you've seen on a server\n- Custom Skin: enter player names or skin URLs in the Custom Skins box, comma-separated. Each Steve picks one. Falls back to a single PNG at config/oldwalkinganimation-custom-skin.png if the box is empty.",
+
+  "key.category.oldwalkinganimation.main":"Old Walking Animation",
+  "key.oldwalkinganimation.spawn_steve":"Spawn Classic Human"
 }
