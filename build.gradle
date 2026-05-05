@@ -219,12 +219,6 @@ dependencies {
                 exclude group: "net.fabricmc"
                 exclude group: "net.fabricmc.fabric-api"
             }
-        } else {
-            def modmenuJar = rootProject.file("dev-deps/modmenu-18.0.0-alpha.8.jar")
-            if (modmenuJar.exists()) {
-                add(modCompile, files(modmenuJar))
-                add(modRuntime, files(modmenuJar))
-            }
         }
         if (project.properties.fabric_api_modules == "*") {
             if (project.properties.include_fabric_api_modules == "true") {
